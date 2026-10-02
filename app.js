@@ -306,7 +306,7 @@ function setRingRotations(o, i) {
    [i*unit-90, (i+1)*unit-90] + rotation. Solve which segment contains top when
    rotation = rot. */
 function segmentAt(units, unit, rot) {
-  const norm = ((-rot - 90) % 360 + 360) % 360; // angle of pointer in wheel coords (deg)
+  const norm = ((-rot % 360) + 360) % 360; // pointer's angle in wheel coords (deg)
   const idx = Math.floor(norm / (unit * 180 / Math.PI)) % units;
   return idx;
 }
