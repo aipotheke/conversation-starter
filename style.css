@@ -19,6 +19,7 @@ body {
   background: radial-gradient(1200px 800px at 50% -10%, #23263a 0%, var(--bg) 60%);
   color: var(--text);
   overflow-x: hidden;
+  overscroll-behavior-y: none;
 }
 
 .hidden { display: none !important; }
@@ -56,7 +57,7 @@ body {
   flex: 1;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  gap: 48px; padding: 24px;
+  gap: 40px; padding: 16px;
 }
 .intro-emoji { font-size: 7rem; line-height: 1; animation: bob 2.4s ease-in-out infinite; }
 @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
@@ -197,15 +198,30 @@ input[type="range"]::-moz-range-thumb {
 .result-depth { color: var(--muted); font-size: 0.9rem; }
 .result-question { font-size: 1.5rem; font-weight: 600; line-height: 1.4; }
 .result-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 2px; }
-.result-actions .btn { padding: 12px 20px; font-size: 1.05rem; }
+.result-actions .btn { padding: 9px 18px; font-size: 0.95rem; }
 
 @media (max-width: 480px) {
-  .intro-title { font-size: 3.4rem; }
-  .intro-emoji { font-size: 5.5rem; }
-  .btn.huge { width: 150px; height: 150px; font-size: 1.8rem; }
-  .lang-row { gap: 22px; }
-  .intro-wrap { gap: 36px; }
+  .intro-title { font-size: 2.8rem; }
+  .intro-emoji { font-size: 4.5rem; }
+  .btn.huge { width: 118px; height: 118px; font-size: 1.5rem; }
+  .lang-row { gap: 16px; }
+  .lang-rows { gap: 18px; }
+  .intro-wrap { gap: 24px; }
   .result-question { font-size: 1.15rem; }
   .wheel-container { width: min(88vw, 320px); }
   .bye-emoji { font-size: 7rem; }
+  .bye-title { font-size: 1.9rem; }
+  .setup-wrap { gap: 12px; padding: 4px 16px 16px; }
+  .setup-label { font-size: 1.05rem; }
+  .topic-btn { padding: 11px 18px; font-size: 1.15rem; }
+  .range-ticks { font-size: 1.5rem; }
+  .btn.big { padding: 14px; font-size: 1.15rem; }
+  .setup-wrap { gap: 12px; padding: 4px 16px 16px; }
+}
+
+@media (max-width: 480px) and (max-height: 640px) {
+  .intro-emoji { font-size: 3.2rem; }
+  .intro-title { font-size: 2.2rem; }
+  .btn.huge { width: 92px; height: 92px; font-size: 1.2rem; }
+  .intro-wrap { gap: 16px; }
 }
