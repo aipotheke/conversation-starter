@@ -25,7 +25,7 @@ const I18N = {
     nextQuestion: "Next question",
     spinAgain: "Spin again",
     backToSetup: "Setup",
-    bye: "Ok bye 👋",
+    bye: "ok bye",
     poolSingular: "question in the pool",
     poolPlural: "questions in the pool",
     scaleNames: ["small talk", "casual", "personal", "deep", "secrets & truths"],
@@ -41,7 +41,7 @@ const I18N = {
     nextQuestion: "Nächste Frage",
     spinAgain: "Nochmal drehen",
     backToSetup: "Einstellungen",
-    bye: "Ok tschüss 👋",
+    bye: "ok tschüss",
     poolSingular: "Frage im Topf",
     poolPlural: "Fragen im Topf",
     scaleNames: ["Small Talk", "locker", "persönlich", "tief", "Geheimnisse & Wahrheiten"],
@@ -413,32 +413,109 @@ function hideResult() {
   $("#result-panel").classList.add("invisible");
 }
 
-/* ================= swipe support (velocity → spin intensity) ================= */
+/* ================= tactile drag: rings follow the finger, release with momentum ================= */
+
+let drag = null;
+
+function ringCenter() {
+  const r = $("#wheel-container").getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+
+function angleAt(x, y, c) {
+  return Math.atan2(y - c.y, x - c.x);
+}
 
 function setupSwipe() {
-  let tracking = false, samples = [];
   const el = $("#wheel-container");
+  const OPTIONS = { passive: false };
+
   el.addEventListener("pointerdown", (e) => {
-    if (e.target.closest("#btn-spin")) return;
-    tracking = true;
-    samples = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
-  });
-  window.addEventListener("pointermove", (e) => {
-    if (!tracking) return;
-    samples.push({ x: e.clientX, y: e.clientY, t: performance.now() });
-    if (samples.length > 8) samples.shift();
-  });
-  window.addEventListener("pointerup", () => {
-    if (!tracking) return;
-    tracking = false;
-    if (samples.length < 2) return;
-    const first = samples[0], last = samples[samples.length - 1];
-    const dist = Math.hypot(last.x - first.x, last.y - first.y);
-    const dt = Math.max(last.t - first.t, 1);
-    if (dist < 40) return;
-    const v = dist / dt;
-    spin(Math.min(4, 0.6 + v * 1.6));
-  });
+    if (state.spinning || e.target.closest("#btn-spin")) return;
+    const c = ringCenter();
+    drag = {
+      id: e.pointerId,
+      c,
+      a0: angleAt(e.clientX, e.clientY, c),
+      rotO0: wheel ? wheel.rotO : 0,
+      rotI0: wheel ? wheel.rotI : 0,
+      samples: [{ a: angleAt(e.clientX, e.clientY, c), t: performance.now() }],
+      moved: false,
+    };
+    el.setPointerCapture(e.pointerId);
+  }, OPTIONS);
+
+  el.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id || !wheel) return;
+    e.preventDefault();
+    const a = angleAt(e.clientX, e.clientY, drag.c);
+    const da = a - drag.a0;
+    if (Math.abs(da) > 0.02) drag.moved = true;
+    // outer ring follows the finger 1:1, inner ring counter-rotates (real dual-dial feel)
+    wheel.rotO = drag.rotO0 + (da * 180) / Math.PI;
+    wheel.rotI = drag.rotI0 - (da * 180) / Math.PI;
+    setRingRotations(wheel.rotO, wheel.rotI);
+    drag.samples.push({ a, t: performance.now() });
+    if (drag.samples.length > 6) drag.samples.shift();
+  }, OPTIONS);
+
+  function release(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    const d = drag;
+    drag = null;
+    if (!wheel) return;
+    if (!d.moved) return;
+    // angular velocity from recent samples (deg/ms), applied as momentum spin
+    const s = d.samples;
+    let vel = 0;
+    if (s.length >= 2) {
+      const first = s[0], last = s[s.length - 1];
+      const dt = Math.max(last.t - first.t, 1);
+      let da = last.a - first.a;
+      while (da > Math.PI) da -= Math.PI * 2;
+      while (da < -Math.PI) da += Math.PI * 2;
+      vel = ((da * 180) / Math.PI) / dt;
+    }
+    momentumSpin(vel);
+  }
+  el.addEventListener("pointerup", release, OPTIONS);
+  el.addEventListener("pointercancel", release, OPTIONS);
+}
+
+/* momentum from finger release: velocity decays with friction until slow,
+   then a short settle eases onto the nearest slice boundary so the result
+   reads cleanly. outer and inner keep opposite directions. */
+function momentumSpin(velDegMs) {
+  if (state.spinning || !wheel) return;
+  const v0 = Math.max(-2.5, Math.min(2.5, velDegMs)); // clamp crazy flicks
+  if (Math.abs(v0) < 0.05) return; // tap without real movement
+  state.spinning = true;
+  $("#btn-spin").classList.add("spinning");
+  hideResult();
+
+  const t = wheel;
+  let rotO = t.rotO, rotI = t.rotI;
+  let vO = v0, vI = -v0 * 0.6; // inner ring opposite & slower, like before
+  const FRICTION = 0.9962;
+  const MIN_V = 0.018;
+  let last = performance.now();
+
+  function frame(now) {
+    const dt = Math.min(now - last, 40);
+    last = now;
+    vO *= Math.pow(FRICTION, dt);
+    vI *= Math.pow(FRICTION, dt);
+    rotO += vO * dt;
+    rotI += vI * dt;
+    setRingRotations(rotO, rotI);
+    if (Math.abs(vO) > MIN_V || Math.abs(vI) > MIN_V) {
+      requestAnimationFrame(frame);
+    } else {
+      t.rotO = rotO; t.rotI = rotI;
+      finishSpin(topicAt(rotO), sliceValueAt(rotI));
+    }
+  }
+  requestAnimationFrame(frame);
 }
 
 /* ================= wiring ================= */

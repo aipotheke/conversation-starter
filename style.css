@@ -63,6 +63,10 @@ body {
 .intro-title { font-size: 4.5rem; font-weight: 800; letter-spacing: 0.03em; }
 .intro-q { color: var(--green); }
 .bye-emoji { font-size: 10rem; }
+.bye-title {
+  font-size: 2.6rem; font-weight: 600; letter-spacing: 0.02em;
+  color: var(--text);
+}
 .lang-rows { display: flex; flex-direction: column; gap: 28px; align-items: center; }
 .lang-row { display: flex; gap: 36px; }
 .decline-msg { color: var(--muted); font-style: italic; min-height: 1.4em; font-size: 1.1rem; text-align: center; }
@@ -91,6 +95,18 @@ body {
 .topic-btn.on::before { content: "✓ "; color: var(--tc, #888); }
 
 .depth-slider { position: relative; padding-top: 6px; }
+.range-stops {
+  position: absolute; top: 12px; left: 0; right: 0; height: 20px;
+  display: flex; align-items: center; pointer-events: none; z-index: 0;
+}
+.range-stops span {
+  flex: 1; display: flex; justify-content: center;
+}
+.range-stops span::before {
+  content: ""; width: 5px; height: 5px; border-radius: 50%;
+  background: rgba(255,255,255,0.85);
+  box-shadow: 0 0 2px rgba(0,0,0,.6);
+}
 input[type="range"] {
   width: 100%; appearance: none; -webkit-appearance: none;
   background: transparent; height: 28px;
