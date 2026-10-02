@@ -107,3 +107,31 @@ money,"What's your relationship with money like?","Wie ist deine Beziehung zu Ge
 money,"Would you stay in a job you hate for double pay?","Würdest du in einem Job bleiben, den du hasst, für doppeltes Gehalt?",6
 money,"What does money mean to you beyond survival?","Was bedeutet Geld für dich jenseits des Überlebens?",7
 money,"Have you ever lied about how much something cost?","Hast du je gelogen, wie viel etwas gekostet hat?",5
+family,"What's for dinner at your place tonight?","Was gibt es heute Abend bei dir zu essen?",1
+family,"Do you have pets?",Hast du Haustiere?,1
+family,"Who is the funniest in your family?",Wer ist der Lustigste in deiner Familie?,2
+family,"Which relative do you avoid at gatherings?","Welchen Verwandten meidest du auf Familienfeiern?",7
+family,"What's the family drama nobody talks about?","Welches Familien-Drama spricht niemand an?",9
+family,"What would break your family apart?","Was würde deine Familie zerbrechen?",10
+friends,"Who is your oldest friend?","Wer ist dein ältester Freund?",1
+friends,"What do you do together with your friends most often?","Was machst du am häufigsten mit deinen Freunden?",2
+friends,"Which friend would you lend money to?","Welchem Freund würdest du Geld leihen?",6
+friends,"Which friend's secret almost slipped out of you?","Wessen Geheimnis ist dir fast rausgerutscht?",8
+friends,"Have you talked behind a friend's back?","Hast du hinter dem Rücken eines Freundes geredet?",9
+work,"What time do you start work usually?","Wann fängst du normalerweise mit der Arbeit an?",1
+work,"Coffee or tea at work?","Kaffee oder Tee bei der Arbeit?",1
+work,"Do you get along with your boss?","Kommst du mit deinem Chef aus?",3
+work,"Have you badmouthed a colleague to get ahead?","Hast du einen Kollegen schlecht geredet um weiterzukommen?",8
+work,"What would get you fired instantly if found out?","Was würde dich sofort feuern, wenn es rauskommt?",9
+work,"What do you secretly think about your boss?","Was denkst du heimlich über deinen Chef?",10
+values,"Are you a morning person?","Bist du ein Morgenmensch?",1
+values,"Pineapple on pizza — yes or no?","Ananas auf Pizza — ja oder nein?",2
+values,"What's a belief you'd defend to the end?","Welche Überzeugung verteidigst du bis zum Schluss?",7
+values,"What moral line would you cross for family?","Welche moralische Linie würdest du für Familie überschreiten?",9
+values,"What do you judge people for even though you shouldn't?","Wobei verurteilst du Leute, obwohl du es nicht solltest?",10
+secrets,"Do you have a nickname nobody uses anymore?","Hast du einen Spitznamen, den niemand mehr benutzt?",1
+secrets,"What's your guilty pleasure show?","Was ist deine Schuldserie?",2
+secrets,"What's the pettiest thing you've ever done?","Was ist die kleinlichste Sache, die du je getan hast?",5
+secrets,"What have you never admitted to anyone?","Was hast du nie jemandem zugegeben?",9
+secrets,"What's the darkest thought you've kept to yourself?","Was ist der dunkelste Gedanke, den du für dich behalten hast?",10
+secrets,"What would ruin you if it came out?","Was würde dich ruinieren, wenn es rauskommt?",10

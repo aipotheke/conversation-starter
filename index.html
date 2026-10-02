@@ -14,20 +14,17 @@
   <div class="intro-wrap">
     <div class="intro-emoji">💬</div>
     <h1 class="intro-title">Talk<span class="intro-q">?</span></h1>
-    <p class="lang-hint" data-i18n="introHint"></p>
     <div class="lang-rows">
-      <div class="lang-row" data-lang="en">
-        <span class="lang-tag">EN</span>
-        <button class="btn green" data-start="en">Yes</button>
-        <button class="btn red" data-decline="en">No</button>
+      <div class="lang-row">
+        <button class="btn green huge" data-start="en">Yes</button>
+        <button class="btn red huge" data-decline="en">No</button>
       </div>
-      <div class="lang-row" data-lang="de">
-        <span class="lang-tag">DE</span>
-        <button class="btn green" data-start="de">Ja</button>
-        <button class="btn red" data-decline="de">Nein</button>
+      <div class="lang-row">
+        <button class="btn green huge" data-start="de">Ja</button>
+        <button class="btn red huge" data-decline="de">Nein</button>
       </div>
     </div>
-    <p id="intro-decline-msg" class="decline-msg hidden"></p>
+    <p id="intro-decline-msg" class="decline-msg"></p>
   </div>
 </section>
 
@@ -44,15 +41,14 @@
     <div id="topic-board" class="topic-board"></div>
 
     <h3 class="setup-label"><span data-i18n="difficultyLabel"></span>
-      <span id="range-readout" class="range-readout">1 – 10</span>
+      <span id="depth-readout" class="range-readout">🙂 3</span>
     </h3>
-    <div class="range-slider">
-      <div class="range-track"><div id="range-fill" class="range-fill"></div></div>
-      <input type="range" id="range-min" min="1" max="10" step="1" value="1" aria-label="minimum difficulty">
-      <input type="range" id="range-max" min="1" max="10" step="1" value="10" aria-label="maximum difficulty">
-      <div class="range-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+    <div class="depth-slider">
+      <input type="range" id="depth-slider" min="1" max="5" step="1" value="3" aria-label="depth">
+      <div class="range-ticks">
+        <span>😇 1</span><span>2</span><span>3</span><span>4</span><span>5 😅</span>
+      </div>
     </div>
-    <div class="range-legend"><span data-i18n="smallTalk"></span><span data-i18n="deepTalk"></span></div>
 
     <p id="pool-count" class="pool-count"></p>
     <button class="btn green big" id="btn-to-wheel" data-i18n="toWheel"></button>
@@ -75,15 +71,12 @@
         <svg viewBox="0 0 100 100" class="spin-icon"><path d="M50 15a35 35 0 1 1-33.2 24" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/><path d="M8 26l9.8 15 15-9.8z" fill="currentColor"/></svg>
       </button>
     </div>
-    <p id="wheel-hint" class="wheel-hint" data-i18n="wheelHint"></p>
-    <p id="wheel-empty" class="wheel-empty hidden" data-i18n="wheelEmpty"></p>
-  </div>
 
-  <!-- RESULT CARD -->
-  <div id="result-overlay" class="result-overlay hidden">
-    <div class="result-card" id="result-card">
-      <div class="result-topic" id="result-topic"></div>
-      <div class="result-difficulty" id="result-difficulty"></div>
+    <div id="result-panel" class="result-panel hidden">
+      <div class="result-head">
+        <span class="result-topic" id="result-topic"></span>
+        <span class="result-depth" id="result-depth"></span>
+      </div>
       <p class="result-question" id="result-question"></p>
       <div class="result-actions">
         <button class="btn green" id="btn-next-question" data-i18n="nextQuestion"></button>
@@ -91,6 +84,9 @@
         <button class="btn ghost" id="btn-to-setup" data-i18n="backToSetup"></button>
       </div>
     </div>
+
+    <p id="wheel-hint" class="wheel-hint" data-i18n="wheelHint"></p>
+    <p id="wheel-empty" class="wheel-empty hidden" data-i18n="wheelEmpty"></p>
   </div>
 </section>
 

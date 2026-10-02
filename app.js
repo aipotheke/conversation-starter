@@ -6,62 +6,50 @@ const TOPICS = [
   { id: "family", color: "#e573b8" },
   { id: "friends", color: "#3e9ad9" },
   { id: "work", color: "#f76b15" },
-  { id: "childhood", color: "#00b8a9" },
-  { id: "dreams", color: "#9d5bd2" },
   { id: "values", color: "#46a758" },
   { id: "secrets", color: "#e5484d" },
-  { id: "hypotheticals", color: "#f5a524" },
-  { id: "travel", color: "#7c9cbf" },
-  { id: "love", color: "#ff6b6b" },
-  { id: "money", color: "#ffd23f" },
 ];
+
+/* depth scale 1..5, each value covers two CSV difficulties */
+const SCALE_BAND = (s) => [s * 2 - 1, s * 2];
+const SCALE_EMOJI = ["😇", "🙂", "🤔", "🔥", "😅"];
 
 const I18N = {
   en: {
-    introHint: "Pick a language — are you in?",
     setupTitle: "Setup",
     topicsLabel: "Topics",
-    difficultyLabel: "Difficulty",
-    smallTalk: "small talk",
-    deepTalk: "deep talk",
+    difficultyLabel: "Depth",
     toWheel: "Go to the wheel →",
     wheelTitle: "Spin it!",
     wheelHint: "Tap the middle button — or swipe the wheel",
     wheelEmpty: "No questions match your filters. Go back and widen them!",
-    resultTopic: "topic",
-    difficulty: "difficulty",
     nextQuestion: "Next question",
     spinAgain: "Spin again",
     backToSetup: "Setup",
     decline: "Fine — talk to you never. 💔",
     poolSingular: "question in the pool",
     poolPlural: "questions in the pool",
-    difficultyNames: ["small talk", "easy", "casual", "personal", "getting deep", "deep", "very deep", "intimate", "secretive", "raw truth"],
+    scaleNames: ["small talk", "casual", "personal", "deep", "secrets & truths"],
   },
   de: {
-    introHint: "Wähle eine Sprache — bist du dabei?",
     setupTitle: "Einstellungen",
     topicsLabel: "Themen",
     difficultyLabel: "Tiefe",
-    smallTalk: "Small Talk",
-    deepTalk: "Tiefes Gespräch",
     toWheel: "Zum Rad →",
     wheelTitle: "Dreh's!",
     wheelHint: "Tippe auf den Knopf in der Mitte — oder wische über das Rad",
     wheelEmpty: "Keine Fragen passen zu deinen Filtern. Gehe zurück und stelle sie weiter!",
-    resultTopic: "Thema",
-    difficulty: "Tiefe",
     nextQuestion: "Nächste Frage",
     spinAgain: "Nochmal drehen",
     backToSetup: "Einstellungen",
     decline: "Na gut — dann eben nie. 💔",
     poolSingular: "Frage im Topf",
     poolPlural: "Fragen im Topf",
-    difficultyNames: ["Small Talk", "einfach", "locker", "persönlich", "vertieft", "tief", "sehr tief", "intim", "vertraut", "heiße Wahrheit"],
+    scaleNames: ["Small Talk", "locker", "persönlich", "tief", "Geheimnisse & Wahrheiten"],
   },
 };
 
-const DIFF_COLOR = (d) => `hsl(${120 - (d - 1) * 12}, 65%, 45%)`;
+const SCALE_COLOR = (s) => `hsl(${120 - (s - 1) * 30}, 65%, 45%)`;
 
 /* ================= state ================= */
 
@@ -69,8 +57,7 @@ const state = {
   lang: localStorage.getItem("cs-lang") || "en",
   questions: [],
   selectedTopics: new Set(JSON.parse(localStorage.getItem("cs-topics") || "null") || TOPICS.map((t) => t.id)),
-  minDiff: 1,
-  maxDiff: 10,
+  depth: parseInt(localStorage.getItem("cs-depth") || "3", 10),
   bag: [],
   spinning: false,
 };
@@ -113,11 +100,11 @@ function loadQuestions(csvText) {
     const r = rows[i];
     const topic = (r[idx.topic] || "").trim().toLowerCase();
     const difficulty = parseInt((r[idx.difficulty] || "").trim(), 10);
-    if (!topics.has(topic)) { console.warn(`Row ${i + 1}: unknown topic "${topic}" — skipped`); continue; }
+    if (!topics.has(topic)) continue;
     if (!(difficulty >= 1 && difficulty <= 10)) { console.warn(`Row ${i + 1}: bad difficulty — skipped`); continue; }
     const q = (r[idx.question] || "").trim();
     const qde = (idx.question_de >= 0 ? r[idx.question_de] : "").trim();
-    if (!q && !qde) { console.warn(`Row ${i + 1}: empty question — skipped`); continue; }
+    if (!q && !qde) continue;
     out.push({ topic, difficulty, en: q, de: qde || q });
   }
   return out;
@@ -128,7 +115,6 @@ function loadQuestions(csvText) {
 function applyI18n() {
   const t = I18N[state.lang];
   document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t[el.dataset.i18n] || ""; });
-  $("#pool-count").textContent = "";
   updatePoolCount();
 }
 
@@ -170,20 +156,22 @@ function saveTopics() {
   localStorage.setItem("cs-topics", JSON.stringify([...state.selectedTopics]));
 }
 
-function updateRangeUI() {
-  const lo = state.minDiff, hi = state.maxDiff;
-  $("#range-min").value = lo;
-  $("#range-max").value = hi;
-  const pct = (v) => ((v - 1) / 9) * 100;
-  const fill = $("#range-fill");
-  fill.style.left = pct(lo) + "%";
-  fill.style.width = (pct(hi) - pct(lo)) + "%";
-  $("#range-readout").textContent = `${lo} – ${hi}`;
+/* scale values that can come up for the chosen depth: depth-1, depth, depth+1 */
+function spinScaleRange() {
+  const vals = [];
+  for (let s = Math.max(1, state.depth - 1); s <= Math.min(5, state.depth + 1); s++) vals.push(s);
+  return vals;
+}
+
+function inScaleBand(q, s) {
+  const [lo, hi] = SCALE_BAND(s);
+  return q.difficulty >= lo && q.difficulty <= hi;
 }
 
 function filterPool() {
+  const scales = spinScaleRange();
   return state.questions.filter(
-    (q) => state.selectedTopics.has(q.topic) && q.difficulty >= state.minDiff && q.difficulty <= state.maxDiff
+    (q) => state.selectedTopics.has(q.topic) && scales.some((s) => inScaleBand(q, s))
   );
 }
 
@@ -194,23 +182,25 @@ function updatePoolCount() {
   if (el) el.textContent = n === 0 ? "" : `${n} ${n === 1 ? t.poolSingular : t.poolPlural}`;
 }
 
-function setupRangeInputs() {
-  const minEl = $("#range-min"), maxEl = $("#range-max");
-  minEl.addEventListener("input", () => {
-    state.minDiff = Math.min(parseInt(minEl.value, 10), state.maxDiff);
-    updateRangeUI(); updatePoolCount(); buildWheel();
+function setupDepthInput() {
+  const el = $("#depth-slider");
+  el.value = state.depth;
+  const readout = () => {
+    $("#depth-readout").textContent = `${SCALE_EMOJI[state.depth - 1]} ${state.depth}`;
+  };
+  readout();
+  el.addEventListener("input", () => {
+    state.depth = parseInt(el.value, 10);
+    localStorage.setItem("cs-depth", String(state.depth));
+    readout();
+    updatePoolCount();
+    buildWheel();
   });
-  maxEl.addEventListener("input", () => {
-    state.maxDiff = Math.max(parseInt(maxEl.value, 10), state.minDiff);
-    updateRangeUI(); updatePoolCount(); buildWheel();
-  });
-  minEl.addEventListener("change", updateRangeUI);
-  maxEl.addEventListener("change", updateRangeUI);
 }
 
 /* ================= wheel ================= */
 
-const CX = 150, CY = 150, R_OUT = 148, R_IN = 88, R_LABEL_OUT = 122, R_LABEL_IN = 62;
+const CX = 150, CY = 150, R_OUT = 148, R_IN = 88, R_LABEL_OUT = 124, R_LABEL_IN = 60;
 const NS = "http://www.w3.org/2000/svg";
 let wheel = null;
 
@@ -220,25 +210,32 @@ function segPath(cx, cy, r0, r1, a0, a1) {
   return `M ${x(r0, a0)} ${y(r0, a0)} L ${x(r1, a0)} ${y(r1, a0)} A ${r1} ${r1} 0 ${large} 1 ${x(r1, a1)} ${y(r1, a1)} L ${x(r0, a1)} ${y(r0, a1)} A ${r0} ${r0} 0 ${large} 0 ${x(r0, a0)} ${y(r0, a0)} Z`;
 }
 
+/* weighted slices for the inner ring: center value 50%, neighbors 25% each
+   (clamped & renormalized at the scale edges or when a value has no questions) */
+function depthSlices(pool) {
+  const has = (s) => pool.some((q) => inScaleBand(q, s));
+  const raw = spinScaleRange().map((s) => ({ value: s, weight: s === state.depth ? 2 : 1, has: has(s) }));
+  const usable = raw.filter((r) => r.has);
+  if (usable.length === 0) return [];
+  const total = usable.reduce((a, r) => a + r.weight, 0);
+  return usable.map((r) => ({ value: r.value, frac: r.weight / total }));
+}
+
 function buildWheel() {
   const svg = $("#wheel-svg");
   if (!svg) return;
   svg.innerHTML = "";
 
   const pool = filterPool();
-  const hasQ = (topic, d) => pool.some((q) => q.topic === topic && q.difficulty === d);
+  const topics = TOPICS.filter((t) => state.selectedTopics.has(t.id) && pool.some((q) => q.topic === t.id));
+  const slices = depthSlices(pool);
 
-  const topics = TOPICS.filter((t) => state.selectedTopics.has(t.id));
-  const diffs = [];
-  for (let d = state.minDiff; d <= state.maxDiff; d++) if (pool.some((q) => q.difficulty === d)) diffs.push(d);
-
-  const empty = topics.length === 0 || diffs.length === 0;
+  const empty = topics.length === 0 || slices.length === 0;
   $("#wheel-empty").classList.toggle("hidden", !empty);
   $("#btn-spin").disabled = empty;
   if (empty) { wheel = null; return; }
 
   const tUnit = (Math.PI * 2) / topics.length;
-  const dUnit = (Math.PI * 2) / diffs.length;
 
   const gOuter = document.createElementNS(NS, "g");
   gOuter.id = "ring-outer";
@@ -251,47 +248,50 @@ function buildWheel() {
     p.setAttribute("d", segPath(CX, CY, R_IN, R_OUT, a0, a1));
     p.setAttribute("fill", tp.color);
     p.setAttribute("stroke", "rgba(0,0,0,0.35)");
-    p.setAttribute("stroke-width", "1");
     gOuter.appendChild(p);
     const mid = (a0 + a1) / 2;
+    const lx = CX + R_LABEL_OUT * Math.cos(mid), ly = CY + R_LABEL_OUT * Math.sin(mid);
     const label = document.createElementNS(NS, "text");
-    label.setAttribute("x", CX + R_LABEL_OUT * Math.cos(mid));
-    label.setAttribute("y", CY + R_LABEL_OUT * Math.sin(mid));
+    label.setAttribute("x", lx);
+    label.setAttribute("y", ly);
     label.setAttribute("fill", "#fff");
-    label.setAttribute("font-size", topics.length > 8 ? 9 : 11);
+    label.setAttribute("font-size", topics.length > 5 ? 10 : 13);
     label.setAttribute("font-weight", "700");
     label.setAttribute("text-anchor", "middle");
     label.setAttribute("dominant-baseline", "middle");
-    label.setAttribute("transform", `rotate(${(mid * 180) / Math.PI + 90}, ${CX + R_LABEL_OUT * Math.cos(mid)}, ${CY + R_LABEL_OUT * Math.sin(mid)})`);
+    label.setAttribute("transform", `rotate(${(mid * 180) / Math.PI + 90}, ${lx}, ${ly})`);
     label.textContent = tp.id;
     gOuter.appendChild(label);
   });
 
-  diffs.forEach((d, i) => {
-    const a0 = i * dUnit - Math.PI / 2, a1 = a0 + dUnit;
+  let angle = -Math.PI / 2;
+  const sliceAngles = [];
+  slices.forEach((sl) => {
+    const span = sl.frac * Math.PI * 2;
+    sliceAngles.push({ value: sl.value, a0: angle, a1: angle + span });
     const p = document.createElementNS(NS, "path");
-    p.setAttribute("d", segPath(CX, CY, 16, R_IN - 4, a0, a1));
-    p.setAttribute("fill", DIFF_COLOR(d));
+    p.setAttribute("d", segPath(CX, CY, 16, R_IN - 4, angle, angle + span));
+    p.setAttribute("fill", SCALE_COLOR(sl.value));
     p.setAttribute("stroke", "rgba(0,0,0,0.35)");
-    p.setAttribute("stroke-width", "1");
     gInner.appendChild(p);
-    const mid = (a0 + a1) / 2;
+    const mid = angle + span / 2;
     const label = document.createElementNS(NS, "text");
     label.setAttribute("x", CX + R_LABEL_IN * Math.cos(mid));
     label.setAttribute("y", CY + R_LABEL_IN * Math.sin(mid));
     label.setAttribute("fill", "#fff");
-    label.setAttribute("font-size", diffs.length > 8 ? 9 : 11);
+    label.setAttribute("font-size", "16");
     label.setAttribute("font-weight", "800");
     label.setAttribute("text-anchor", "middle");
     label.setAttribute("dominant-baseline", "middle");
-    label.textContent = d;
+    label.textContent = sl.value;
     gInner.appendChild(label);
+    angle += span;
   });
 
   svg.appendChild(gOuter);
   svg.appendChild(gInner);
 
-  wheel = { topics, diffs, tUnit, dUnit, rotO: 0, rotI: 0 };
+  wheel = { topics, slices: sliceAngles, tUnit, rotO: 0, rotI: 0 };
   setRingRotations(0, 0);
 }
 
@@ -302,45 +302,47 @@ function setRingRotations(o, i) {
   $("#ring-inner").style.transformOrigin = "150px 150px";
 }
 
-/* pointer is at top = -90deg in math coords; a segment i covers angles
-   [i*unit-90, (i+1)*unit-90] + rotation. Solve which segment contains top when
-   rotation = rot. */
-function segmentAt(units, unit, rot) {
-  const norm = ((-rot % 360) + 360) % 360; // pointer's angle in wheel coords (deg)
-  const idx = Math.floor(norm / (unit * 180 / Math.PI)) % units;
-  return idx;
+function topicAt(rot) {
+  const norm = ((-rot % 360) + 360) % 360;
+  const idx = Math.floor(norm / (wheel.tUnit * 180 / Math.PI)) % wheel.topics.length;
+  return wheel.topics[idx].id;
 }
 
+function sliceValueAt(rot) {
+  const rad = (((-rot % 360) + 360) % 360) * Math.PI / 180 - Math.PI / 2;
+  for (const sl of wheel.slices) {
+    const a1 = sl.a1 < sl.a0 ? sl.a1 + Math.PI * 2 : sl.a1;
+    let r = rad;
+    while (r < sl.a0) r += Math.PI * 2;
+    if (r < a1) return sl.value;
+  }
+  return wheel.slices[wheel.slices.length - 1].value;
+}
+
+/* slower & longer: ~1.5 turns over ~5.5s with a long ease-out */
 function spin() {
   if (state.spinning || !wheel) return;
   state.spinning = true;
   $("#btn-spin").classList.add("spinning");
-  $("#result-overlay").classList.add("hidden");
+  hideResult();
 
   const t = wheel;
-  const spinsO = 4 + Math.random() * 2;
-  const spinsI = 3 + Math.random() * 2;
-  const targetO = -(spinsO * 360 + Math.random() * 360);
-  const dirI = Math.random() < 0.5 ? -1 : 1;
-  const targetI = dirI * (spinsI * 360 + Math.random() * 360);
-
   const startO = t.rotO % 360, startI = t.rotI % 360;
-  const endO = startO + targetO, endI = startI + targetI;
-  const dur = 3400 + Math.random() * 800;
+  const endO = startO - (360 * 1.2 + Math.random() * 180);
+  const endI = startI + (Math.random() < 0.5 ? -1 : 1) * (360 * 1 + Math.random() * 180);
+  const dur = 5500 + Math.random() * 1000;
   const t0 = performance.now();
 
   function frame(now) {
     const p = Math.min((now - t0) / dur, 1);
-    const ease = 1 - Math.pow(1 - p, 4);
-    const ro = startO + (endO - startO) * ease;
-    const ri = startI + (endI - startI) * ease;
-    setRingRotations(ro, ri);
+    const ease = 1 - Math.pow(1 - p, 3);
+    setRingRotations(startO + (endO - startO) * ease, startI + (endI - startI) * ease);
     if (p < 1) requestAnimationFrame(frame);
     else {
       t.rotO = endO; t.rotI = endI;
-      const topicIdx = segmentAt(t.topics.length, t.tUnit, endO % 360);
-      const diffIdx = segmentAt(t.diffs.length, t.dUnit, endI % 360);
-      finishSpin(t.topics[topicIdx].id, t.diffs[diffIdx]);
+      const topic = topicAt(endO);
+      const value = sliceValueAt(endI);
+      finishSpin(topic, value);
     }
   }
   requestAnimationFrame(frame);
@@ -348,31 +350,37 @@ function spin() {
 
 /* ================= results ================= */
 
-function finishSpin(topic, difficulty) {
+function bandMatch(q, s) { return inScaleBand(q, s); }
+
+function finishSpin(topic, value) {
   state.spinning = false;
   $("#btn-spin").classList.remove("spinning");
 
-  if (state.bag.length === 0 || !state.bag.some((q) => q.topic === topic && q.difficulty === difficulty)) {
+  const matches = (q) => q.topic === topic && bandMatch(q, value);
+  if (state.bag.length === 0 || !state.bag.some(matches)) {
     state.bag = filterPool().slice().sort(() => Math.random() - 0.5);
   }
-  const candidates = state.bag.filter((q) => q.topic === topic && q.difficulty === difficulty);
-  const fallback = candidates.length ? candidates : state.bag.filter((q) => q.topic === topic);
-  const q = (fallback.length ? fallback : state.bag)[0];
+  let q = state.bag.find(matches);
+  if (!q) q = state.bag.find((x) => x.topic === topic);
+  if (!q) q = state.bag[0];
   state.bag = state.bag.filter((x) => x !== q);
 
-  showResult(q);
+  showResult(q, value);
 }
 
-function showResult(q) {
+function showResult(q, value) {
   const tp = TOPICS.find((t) => t.id === q.topic);
   const t = I18N[state.lang];
-  const card = $("#result-card");
-  card.style.setProperty("--tc", tp ? tp.color : "#888");
-  $("#result-topic").textContent = `${tp ? tp.id : q.topic} · ${t.resultTopic}`;
-  const dName = t.difficultyNames[q.difficulty - 1] || "";
-  $("#result-difficulty").textContent = `${t.difficulty}: ${q.difficulty}/10 — ${dName}`;
+  const panel = $("#result-panel");
+  panel.style.setProperty("--tc", tp ? tp.color : "#888");
+  $("#result-topic").textContent = tp ? tp.id : q.topic;
+  $("#result-depth").textContent = `${SCALE_EMOJI[value - 1]} ${t.scaleNames[value - 1]}`;
   $("#result-question").textContent = q[state.lang] || q.en;
-  $("#result-overlay").classList.remove("hidden");
+  panel.classList.remove("hidden");
+}
+
+function hideResult() {
+  $("#result-panel").classList.add("hidden");
 }
 
 /* ================= swipe support ================= */
@@ -410,17 +418,15 @@ function wireButtons() {
     })
   );
   $("#btn-back-intro").addEventListener("click", () => showScreen("screen-intro"));
-  $("#btn-back-setup").addEventListener("click", () => showScreen("screen-setup"));
+  $("#btn-back-setup").addEventListener("click", () => { hideResult(); showScreen("screen-setup"); });
   $("#btn-to-wheel").addEventListener("click", () => { buildWheel(); showScreen("screen-wheel"); });
   $("#btn-spin").addEventListener("click", spin);
   $("#btn-next-question").addEventListener("click", () => {
     if (!wheel) return;
-    const topicIdx = segmentAt(wheel.topics.length, wheel.tUnit, wheel.rotO % 360);
-    const diffIdx = segmentAt(wheel.diffs.length, wheel.dUnit, wheel.rotI % 360);
-    finishSpin(wheel.topics[topicIdx].id, wheel.diffs[diffIdx]);
+    finishSpin(topicAt(wheel.rotO), sliceValueAt(wheel.rotI));
   });
-  $("#btn-respin").addEventListener("click", () => { $("#result-overlay").classList.add("hidden"); spin(); });
-  $("#btn-to-setup").addEventListener("click", () => { $("#result-overlay").classList.add("hidden"); showScreen("screen-setup"); });
+  $("#btn-respin").addEventListener("click", () => { hideResult(); spin(); });
+  $("#btn-to-setup").addEventListener("click", () => { hideResult(); showScreen("screen-setup"); });
 }
 
 /* ================= init ================= */
@@ -428,8 +434,7 @@ function wireButtons() {
 async function init() {
   applyI18n();
   buildTopicBoard();
-  updateRangeUI();
-  setupRangeInputs();
+  setupDepthInput();
   setupSwipe();
   wireButtons();
   try {
