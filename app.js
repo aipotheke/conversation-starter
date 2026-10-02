@@ -308,11 +308,11 @@ function buildWheel() {
     label.setAttribute("x", CX + R_LABEL_IN * Math.cos(mid));
     label.setAttribute("y", CY + R_LABEL_IN * Math.sin(mid));
     label.setAttribute("fill", "#fff");
-    label.setAttribute("font-size", "22");
+    label.setAttribute("font-size", "20");
     label.setAttribute("font-weight", "800");
     label.setAttribute("text-anchor", "middle");
     label.setAttribute("dominant-baseline", "middle");
-    label.textContent = SCALE_EMOJI[sl.value - 1];
+    label.textContent = sl.value;
     gInner.appendChild(label);
     angle += span;
   });
@@ -404,7 +404,7 @@ function showResult(q, value) {
   const panel = $("#result-panel");
   panel.style.setProperty("--tc", tp ? tp.color : "#888");
   $("#result-topic").textContent = tp ? tp.id : q.topic;
-  $("#result-depth").textContent = SCALE_EMOJI[value - 1];
+  $("#result-depth").textContent = `${SCALE_EMOJI[value - 1]} ${t.scaleNames[value - 1]}`;
   $("#result-question").textContent = q[state.lang] || q.en;
   panel.classList.remove("invisible");
 }
@@ -465,6 +465,7 @@ function setupSwipe() {
     drag = null;
     if (!wheel) return;
     if (!d.moved) return;
+    // angular velocity from recent samples (deg/ms), applied as momentum spin
     const s = d.samples;
     let vel = 0;
     if (s.length >= 2) {
@@ -475,12 +476,7 @@ function setupSwipe() {
       while (da < -Math.PI) da += Math.PI * 2;
       vel = ((da * 180) / Math.PI) / dt;
     }
-    if (Math.abs(vel) < 0.05) {
-      // released slowly / held still: land where the wheel sits now
-      finishSpin(topicAt(wheel.rotO), sliceValueAt(wheel.rotI));
-    } else {
-      momentumSpin(vel);
-    }
+    momentumSpin(vel);
   }
   el.addEventListener("pointerup", release, OPTIONS);
   el.addEventListener("pointercancel", release, OPTIONS);
@@ -551,6 +547,8 @@ function wireButtons() {
     if (!wheel) return;
     finishSpin(topicAt(wheel.rotO), sliceValueAt(wheel.rotI));
   });
+  $("#btn-respin").addEventListener("click", () => spin(1.2));
+  $("#btn-to-setup").addEventListener("click", () => { hideResult(); goTo("setup"); });
   window.addEventListener("popstate", syncFromRoute);
 }
 
