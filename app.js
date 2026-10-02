@@ -491,7 +491,7 @@ function setupSwipe() {
    reads cleanly. outer and inner keep opposite directions. */
 function momentumSpin(velDegMs) {
   if (state.spinning || !wheel) return;
-  const v0 = Math.max(-8, Math.min(8, velDegMs * 1.35)); // clamp crazy flicks
+  const v0 = Math.max(-2.5, Math.min(2.5, velDegMs)); // clamp crazy flicks
   if (Math.abs(v0) < 0.05) return; // tap without real movement
   state.spinning = true;
   $("#btn-spin").classList.add("spinning");
@@ -500,8 +500,8 @@ function momentumSpin(velDegMs) {
   const t = wheel;
   let rotO = t.rotO, rotI = t.rotI;
   let vO = v0, vI = -v0 * 0.6; // inner ring opposite & slower, like before
-  const FRICTION = 0.999;
-  const MIN_V = 0.01;
+  const FRICTION = 0.9962;
+  const MIN_V = 0.018;
   let last = performance.now();
 
   function frame(now) {
@@ -546,7 +546,7 @@ function wireButtons() {
   $("#btn-back-intro").addEventListener("click", () => goTo("intro"));
   $("#btn-back-setup").addEventListener("click", () => { hideResult(); goTo("setup"); });
   $("#btn-to-wheel").addEventListener("click", () => { buildWheel(); goTo("wheel"); });
-  $("#btn-spin").addEventListener("click", () => spin(0.8 + Math.random() * 2.8));
+  $("#btn-spin").addEventListener("click", () => spin(1.2));
   $("#btn-next-question").addEventListener("click", () => {
     if (!wheel) return;
     finishSpin(topicAt(wheel.rotO), sliceValueAt(wheel.rotI));
