@@ -2,6 +2,8 @@
 
 A static web app for couples, friends and parties: spin a wheel-of-fortune to get a random conversation question by topic and depth. Works straight from GitHub Pages — no build step, no backend, just HTML/CSS/JS.
 
+**▶ Live: https://aipotheke.github.io/conversation-starter/**
+
 ## How it works
 
 1. **Entry screen** — pick your language by answering "Talk?" with a green **Yes/Ja** or red **No/Nein** button.
@@ -35,11 +37,10 @@ python3 -m http.server 8000
 
 ## Deploy on GitHub Pages
 
-1. Push this repo to GitHub.
-2. Settings → Pages → Source: `main` branch, `/ (root)`.
-3. Your app is live at `https://<user>.github.io/<repo>/`.
+Already deployed: this repo serves via GitHub Pages from `main` / root at
+<https://aipotheke.github.io/conversation-starter/>.
 
-All paths are relative, so it works from a repo subpath out of the box.
+For your own copy: fork/push the repo, then Settings → Pages → Source: `main` branch, `/ (root)`. All paths are relative, so it works from a repo subpath out of the box.
 
 ## Contributing questions
 
