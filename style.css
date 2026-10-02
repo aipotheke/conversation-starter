@@ -96,18 +96,22 @@ body {
 .topic-btn.on::before { content: "✓ "; color: var(--tc, #888); }
 
 .depth-slider { position: relative; padding-top: 6px; }
+.depth-slider input[type="range"] { position: relative; z-index: 2; }
 .range-stops {
-  position: absolute; top: 12px; left: 0; right: 0; height: 20px;
-  display: flex; align-items: center; pointer-events: none; z-index: 0;
+  position: absolute; top: 20px; left: 18px; right: 18px; height: 0;
+  pointer-events: none; z-index: 0;
 }
 .range-stops span {
-  flex: 1; display: flex; justify-content: center;
-}
-.range-stops span::before {
-  content: ""; width: 5px; height: 5px; border-radius: 50%;
-  background: rgba(255,255,255,0.85);
+  position: absolute; top: -2.5px; width: 5px; height: 5px;
+  margin-left: -2.5px; border-radius: 50%;
+  background: rgba(255,255,255,0.9);
   box-shadow: 0 0 2px rgba(0,0,0,.6);
 }
+.range-stops span:nth-child(1) { left: 0%; }
+.range-stops span:nth-child(2) { left: 25%; }
+.range-stops span:nth-child(3) { left: 50%; }
+.range-stops span:nth-child(4) { left: 75%; }
+.range-stops span:nth-child(5) { left: 100%; }
 input[type="range"] {
   width: 100%; appearance: none; -webkit-appearance: none;
   background: transparent; height: 28px;
