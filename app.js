@@ -4,13 +4,12 @@
 
 const TOPICS = [
   { id: "family", color: "#e573b8" },
-  { id: "friends", color: "#3e9ad9" },
   { id: "work", color: "#f76b15" },
-  { id: "values", color: "#46a758" },
-  { id: "secrets", color: "#e5484d" },
+  { id: "money", color: "#ffd23f" },
+  { id: "politics", color: "#9d5bd2" },
+  { id: "misc", color: "#3e9ad9" },
 ];
 
-/* depth scale 1..5, each value covers two CSV difficulties */
 const SCALE_BAND = (s) => [s * 2 - 1, s * 2];
 const SCALE_EMOJI = ["😇", "🙂", "🤔", "🔥", "😅"];
 
@@ -26,7 +25,7 @@ const I18N = {
     nextQuestion: "Next question",
     spinAgain: "Spin again",
     backToSetup: "Setup",
-    decline: "Fine — talk to you never. 💔",
+    bye: "Ok bye 👋",
     poolSingular: "question in the pool",
     poolPlural: "questions in the pool",
     scaleNames: ["small talk", "casual", "personal", "deep", "secrets & truths"],
@@ -42,7 +41,7 @@ const I18N = {
     nextQuestion: "Nächste Frage",
     spinAgain: "Nochmal drehen",
     backToSetup: "Einstellungen",
-    decline: "Na gut — dann eben nie. 💔",
+    bye: "Ok tschüss 👋",
     poolSingular: "Frage im Topf",
     poolPlural: "Fragen im Topf",
     scaleNames: ["Small Talk", "locker", "persönlich", "tief", "Geheimnisse & Wahrheiten"],
@@ -100,7 +99,7 @@ function loadQuestions(csvText) {
     const r = rows[i];
     const topic = (r[idx.topic] || "").trim().toLowerCase();
     const difficulty = parseInt((r[idx.difficulty] || "").trim(), 10);
-    if (!topics.has(topic)) continue;
+    if (!topics.has(topic)) { console.warn(`Row ${i + 1}: unknown topic "${topic}" — skipped`); continue; }
     if (!(difficulty >= 1 && difficulty <= 10)) { console.warn(`Row ${i + 1}: bad difficulty — skipped`); continue; }
     const q = (r[idx.question] || "").trim();
     const qde = (idx.question_de >= 0 ? r[idx.question_de] : "").trim();
@@ -118,11 +117,36 @@ function applyI18n() {
   updatePoolCount();
 }
 
-/* ================= screens ================= */
+/* ================= routing (browser back/forward) ================= */
 
-function showScreen(id) {
+const ROUTES = { "": "screen-intro", intro: "screen-intro", setup: "screen-setup", wheel: "screen-wheel", bye: "screen-bye" };
+
+function routeFromHash() {
+  return (location.hash.replace(/^#\/?/, "") || "intro");
+}
+
+function showScreen(id, push) {
   document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
   $("#" + id).classList.add("active");
+  if (push) {
+    const name = Object.keys(ROUTES).find((k) => ROUTES[k] === id);
+    const target = `#/${name}`;
+    if (location.hash !== target) history.pushState({ screen: name }, "", target);
+  }
+}
+
+function syncFromRoute() {
+  const name = routeFromHash();
+  const id = ROUTES[name] || "screen-intro";
+  if (id === "screen-wheel") buildWheel();
+  if (id === "screen-intro" || id === "screen-bye") hideResult();
+  document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+  $("#" + id).classList.add("active");
+}
+
+function goTo(name) {
+  history.pushState({ screen: name }, "", `#/${name}`);
+  syncFromRoute();
 }
 
 /* ================= setup screen ================= */
@@ -156,7 +180,6 @@ function saveTopics() {
   localStorage.setItem("cs-topics", JSON.stringify([...state.selectedTopics]));
 }
 
-/* scale values that can come up for the chosen depth: depth-1, depth, depth+1 */
 function spinScaleRange() {
   const vals = [];
   for (let s = Math.max(1, state.depth - 1); s <= Math.min(5, state.depth + 1); s++) vals.push(s);
@@ -182,11 +205,18 @@ function updatePoolCount() {
   if (el) el.textContent = n === 0 ? "" : `${n} ${n === 1 ? t.poolSingular : t.poolPlural}`;
 }
 
+function emojiThumbURL(emoji) {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>${emoji}</text></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
 function setupDepthInput() {
   const el = $("#depth-slider");
   el.value = state.depth;
   const readout = () => {
-    $("#depth-readout").textContent = `${SCALE_EMOJI[state.depth - 1]} ${state.depth}`;
+    const emoji = SCALE_EMOJI[state.depth - 1];
+    $("#depth-readout").textContent = emoji;
+    el.style.setProperty("--thumb-bg", emojiThumbURL(emoji));
   };
   readout();
   el.addEventListener("input", () => {
@@ -210,8 +240,6 @@ function segPath(cx, cy, r0, r1, a0, a1) {
   return `M ${x(r0, a0)} ${y(r0, a0)} L ${x(r1, a0)} ${y(r1, a0)} A ${r1} ${r1} 0 ${large} 1 ${x(r1, a1)} ${y(r1, a1)} L ${x(r0, a1)} ${y(r0, a1)} A ${r0} ${r0} 0 ${large} 0 ${x(r0, a0)} ${y(r0, a0)} Z`;
 }
 
-/* weighted slices for the inner ring: center value 50%, neighbors 25% each
-   (clamped & renormalized at the scale edges or when a value has no questions) */
 function depthSlices(pool) {
   const has = (s) => pool.some((q) => inScaleBand(q, s));
   const raw = spinScaleRange().map((s) => ({ value: s, weight: s === state.depth ? 2 : 1, has: has(s) }));
@@ -255,7 +283,7 @@ function buildWheel() {
     label.setAttribute("x", lx);
     label.setAttribute("y", ly);
     label.setAttribute("fill", "#fff");
-    label.setAttribute("font-size", topics.length > 5 ? 10 : 13);
+    label.setAttribute("font-size", "15");
     label.setAttribute("font-weight", "700");
     label.setAttribute("text-anchor", "middle");
     label.setAttribute("dominant-baseline", "middle");
@@ -279,7 +307,7 @@ function buildWheel() {
     label.setAttribute("x", CX + R_LABEL_IN * Math.cos(mid));
     label.setAttribute("y", CY + R_LABEL_IN * Math.sin(mid));
     label.setAttribute("fill", "#fff");
-    label.setAttribute("font-size", "16");
+    label.setAttribute("font-size", "20");
     label.setAttribute("font-weight", "800");
     label.setAttribute("text-anchor", "middle");
     label.setAttribute("dominant-baseline", "middle");
@@ -319,18 +347,23 @@ function sliceValueAt(rot) {
   return wheel.slices[wheel.slices.length - 1].value;
 }
 
-/* slower & longer: ~1.5 turns over ~5.5s with a long ease-out */
-function spin() {
+/* intensity: 1 = gentle tap default, up to ~4 for a hard swipe.
+   outer ring turns clockwise, inner ring counter-clockwise at a
+   different speed so the two rings land in fresh combinations */
+function spin(intensity) {
   if (state.spinning || !wheel) return;
   state.spinning = true;
   $("#btn-spin").classList.add("spinning");
   hideResult();
 
+  const k = Math.min(Math.max(intensity, 0.6), 4);
   const t = wheel;
   const startO = t.rotO % 360, startI = t.rotI % 360;
-  const endO = startO - (360 * 1.2 + Math.random() * 180);
-  const endI = startI + (Math.random() < 0.5 ? -1 : 1) * (360 * 1 + Math.random() * 180);
-  const dur = 5500 + Math.random() * 1000;
+  const turnsO = 1.2 + k * 1.4 + Math.random() * 0.3;
+  const turnsI = (1 + k * 0.9 + Math.random() * 0.3);
+  const endO = startO - turnsO * 360;
+  const endI = startI + turnsI * 360;
+  const dur = 3800 + k * 900;
   const t0 = performance.now();
 
   function frame(now) {
@@ -340,9 +373,7 @@ function spin() {
     if (p < 1) requestAnimationFrame(frame);
     else {
       t.rotO = endO; t.rotI = endI;
-      const topic = topicAt(endO);
-      const value = sliceValueAt(endI);
-      finishSpin(topic, value);
+      finishSpin(topicAt(endO), sliceValueAt(endI));
     }
   }
   requestAnimationFrame(frame);
@@ -350,13 +381,11 @@ function spin() {
 
 /* ================= results ================= */
 
-function bandMatch(q, s) { return inScaleBand(q, s); }
-
 function finishSpin(topic, value) {
   state.spinning = false;
   $("#btn-spin").classList.remove("spinning");
 
-  const matches = (q) => q.topic === topic && bandMatch(q, value);
+  const matches = (q) => q.topic === topic && inScaleBand(q, value);
   if (state.bag.length === 0 || !state.bag.some(matches)) {
     state.bag = filterPool().slice().sort(() => Math.random() - 0.5);
   }
@@ -383,20 +412,31 @@ function hideResult() {
   $("#result-panel").classList.add("hidden");
 }
 
-/* ================= swipe support ================= */
+/* ================= swipe support (velocity → spin intensity) ================= */
 
 function setupSwipe() {
-  let sx = 0, sy = 0, tracking = false;
+  let tracking = false, samples = [];
   const el = $("#wheel-container");
   el.addEventListener("pointerdown", (e) => {
     if (e.target.closest("#btn-spin")) return;
-    tracking = true; sx = e.clientX; sy = e.clientY;
+    tracking = true;
+    samples = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
   });
-  window.addEventListener("pointerup", (e) => {
+  window.addEventListener("pointermove", (e) => {
+    if (!tracking) return;
+    samples.push({ x: e.clientX, y: e.clientY, t: performance.now() });
+    if (samples.length > 8) samples.shift();
+  });
+  window.addEventListener("pointerup", () => {
     if (!tracking) return;
     tracking = false;
-    const dx = e.clientX - sx, dy = e.clientY - sy;
-    if (Math.hypot(dx, dy) > 40) spin();
+    if (samples.length < 2) return;
+    const first = samples[0], last = samples[samples.length - 1];
+    const dist = Math.hypot(last.x - first.x, last.y - first.y);
+    const dt = Math.max(last.t - first.t, 1);
+    if (dist < 40) return;
+    const v = dist / dt;
+    spin(Math.min(4, 0.6 + v * 1.6));
   });
 }
 
@@ -408,25 +448,36 @@ function wireButtons() {
       state.lang = b.dataset.start;
       localStorage.setItem("cs-lang", state.lang);
       applyI18n();
-      buildWheel();
-      showScreen("screen-setup");
+      updateEmojiLabels();
+      goTo("setup");
     })
   );
   document.querySelectorAll("[data-decline]").forEach((b) =>
     b.addEventListener("click", () => {
-      $("#intro-decline-msg").textContent = I18N[b.dataset.decline].decline;
+      state.lang = b.dataset.decline;
+      localStorage.setItem("cs-lang", state.lang);
+      applyI18n();
+      updateEmojiLabels();
+      goTo("bye");
     })
   );
-  $("#btn-back-intro").addEventListener("click", () => showScreen("screen-intro"));
-  $("#btn-back-setup").addEventListener("click", () => { hideResult(); showScreen("screen-setup"); });
-  $("#btn-to-wheel").addEventListener("click", () => { buildWheel(); showScreen("screen-wheel"); });
-  $("#btn-spin").addEventListener("click", spin);
+  $("#btn-back-intro").addEventListener("click", () => goTo("intro"));
+  $("#btn-back-setup").addEventListener("click", () => { hideResult(); goTo("setup"); });
+  $("#btn-to-wheel").addEventListener("click", () => { buildWheel(); goTo("wheel"); });
+  $("#btn-spin").addEventListener("click", () => spin(1.2));
   $("#btn-next-question").addEventListener("click", () => {
     if (!wheel) return;
     finishSpin(topicAt(wheel.rotO), sliceValueAt(wheel.rotI));
   });
-  $("#btn-respin").addEventListener("click", () => { hideResult(); spin(); });
-  $("#btn-to-setup").addEventListener("click", () => { hideResult(); showScreen("screen-setup"); });
+  $("#btn-respin").addEventListener("click", () => spin(1.2));
+  $("#btn-to-setup").addEventListener("click", () => { hideResult(); goTo("setup"); });
+  window.addEventListener("popstate", syncFromRoute);
+}
+
+function updateEmojiLabels() {
+  $("#depth-readout").textContent = SCALE_EMOJI[state.depth - 1];
+  const el = $("#depth-slider");
+  if (el) el.style.setProperty("--thumb-bg", emojiThumbURL(SCALE_EMOJI[state.depth - 1]));
 }
 
 /* ================= init ================= */
@@ -449,6 +500,8 @@ async function init() {
   }
   updatePoolCount();
   buildWheel();
+  if (!location.hash) history.replaceState({ screen: "intro" }, "", "#/intro");
+  syncFromRoute();
 }
 
 init();
