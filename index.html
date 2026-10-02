@@ -30,8 +30,7 @@
 <!-- BYE SCREEN -->
 <section id="screen-bye" class="screen">
   <div class="intro-wrap">
-    <div class="intro-emoji">👋</div>
-    <h1 class="intro-title bye-title" data-i18n="bye"></h1>
+    <div class="intro-emoji bye-emoji">👋</div>
   </div>
 </section>
 
@@ -47,12 +46,10 @@
     <h3 class="setup-label" data-i18n="topicsLabel"></h3>
     <div id="topic-board" class="topic-board"></div>
 
-    <h3 class="setup-label"><span data-i18n="difficultyLabel"></span>
-      <span id="depth-readout" class="range-readout">🙂</span>
-    </h3>
+    <h3 class="setup-label"><span data-i18n="difficultyLabel"></span></h3>
     <div class="depth-slider">
       <input type="range" id="depth-slider" min="1" max="5" step="1" value="3" aria-label="depth">
-      <div class="range-ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+      <div class="range-ticks"><span id="tick-min">😇</span><span id="tick-max">😱</span></div>
     </div>
 
     <p id="pool-count" class="pool-count"></p>
@@ -69,15 +66,7 @@
   </header>
 
   <div class="wheel-wrap">
-    <div class="wheel-pointer"></div>
-    <div id="wheel-container" class="wheel-container">
-      <svg id="wheel-svg" viewBox="0 0 300 300" aria-hidden="true"></svg>
-      <button id="btn-spin" class="spin-btn" aria-label="Spin the wheel">
-        <svg viewBox="0 0 100 100" class="spin-icon"><path d="M50 15a35 35 0 1 1-33.2 24" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/><path d="M8 26l9.8 15 15-9.8z" fill="currentColor"/></svg>
-      </button>
-    </div>
-
-    <div id="result-panel" class="result-panel hidden">
+    <div id="result-panel" class="result-panel invisible">
       <div class="result-head">
         <span class="result-topic" id="result-topic"></span>
         <span class="result-depth" id="result-depth"></span>
@@ -90,7 +79,16 @@
       </div>
     </div>
 
-    <p id="wheel-hint" class="wheel-hint" data-i18n="wheelHint"></p>
+    <div class="wheel-area">
+    <div class="wheel-pointer"></div>
+    <div id="wheel-container" class="wheel-container">
+      <svg id="wheel-svg" viewBox="0 0 300 300" aria-hidden="true"></svg>
+      <button id="btn-spin" class="spin-btn" aria-label="Spin the wheel">
+        <svg viewBox="0 0 100 100" class="spin-icon"><path d="M50 15a35 35 0 1 1-33.2 24" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"/><path d="M8 26l9.8 15 15-9.8z" fill="currentColor"/></svg>
+      </button>
+    </div>
+
+    </div>
     <p id="wheel-empty" class="wheel-empty hidden" data-i18n="wheelEmpty"></p>
   </div>
 </section>

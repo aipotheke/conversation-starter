@@ -11,7 +11,7 @@ const TOPICS = [
 ];
 
 const SCALE_BAND = (s) => [s * 2 - 1, s * 2];
-const SCALE_EMOJI = ["😇", "🙂", "🤔", "🔥", "😅"];
+const SCALE_EMOJI = ["😇", "🙂", "🤔", "😅", "😱"];
 
 const I18N = {
   en: {
@@ -215,8 +215,9 @@ function setupDepthInput() {
   el.value = state.depth;
   const readout = () => {
     const emoji = SCALE_EMOJI[state.depth - 1];
-    $("#depth-readout").textContent = emoji;
     el.style.setProperty("--thumb-bg", emojiThumbURL(emoji));
+    $("#tick-min").textContent = SCALE_EMOJI[0];
+    $("#tick-max").textContent = SCALE_EMOJI[4];
   };
   readout();
   el.addEventListener("input", () => {
@@ -405,11 +406,11 @@ function showResult(q, value) {
   $("#result-topic").textContent = tp ? tp.id : q.topic;
   $("#result-depth").textContent = `${SCALE_EMOJI[value - 1]} ${t.scaleNames[value - 1]}`;
   $("#result-question").textContent = q[state.lang] || q.en;
-  panel.classList.remove("hidden");
+  panel.classList.remove("invisible");
 }
 
 function hideResult() {
-  $("#result-panel").classList.add("hidden");
+  $("#result-panel").classList.add("invisible");
 }
 
 /* ================= swipe support (velocity → spin intensity) ================= */
@@ -475,7 +476,6 @@ function wireButtons() {
 }
 
 function updateEmojiLabels() {
-  $("#depth-readout").textContent = SCALE_EMOJI[state.depth - 1];
   const el = $("#depth-slider");
   if (el) el.style.setProperty("--thumb-bg", emojiThumbURL(SCALE_EMOJI[state.depth - 1]));
 }
