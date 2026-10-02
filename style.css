@@ -47,8 +47,9 @@ body {
 .btn.big { width: 100%; max-width: 420px; padding: 18px; font-size: 1.3rem; }
 .btn.small { padding: 8px 16px; font-size: 1rem; }
 .btn.huge {
-  width: 190px; height: 190px; border-radius: 50%;
-  font-size: 2.2rem; font-weight: 800;
+  width: 100%; aspect-ratio: 1; height: auto; border-radius: 50%;
+  font-size: clamp(1.3rem, 7vw, 2.2rem); font-weight: 800;
+  padding: 0;
 }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
 
@@ -68,8 +69,8 @@ body {
   font-size: 2.6rem; font-weight: 600; letter-spacing: 0.02em;
   color: var(--text);
 }
-.lang-rows { display: flex; flex-direction: column; gap: 28px; align-items: center; }
-.lang-row { display: flex; gap: 36px; }
+.lang-rows { display: flex; flex-direction: column; gap: 24px; width: 100%; max-width: 420px; padding: 0 16px; }
+.lang-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .decline-msg { color: var(--muted); font-style: italic; min-height: 1.4em; font-size: 1.1rem; text-align: center; }
 
 /* ---------- topbar ---------- */
@@ -226,6 +227,6 @@ input[type="range"]::-moz-range-thumb {
 @media (max-width: 480px) and (max-height: 640px) {
   .intro-emoji { font-size: 3.2rem; }
   .intro-title { font-size: 2.2rem; }
-  .btn.huge { width: 92px; height: 92px; font-size: 1.2rem; }
+  .intro-wrap { gap: 14px; }
   .intro-wrap { gap: 16px; }
 }
